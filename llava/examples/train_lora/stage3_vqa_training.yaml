@@ -1,0 +1,118 @@
+### Stage 3: VQA Training Configuration
+### Sanitized version for public repository - removed hardcoded paths and Chinese comments
+
+### Model Configuration
+model_name_or_path: custom_llava  # Use custom_llava model type
+llm_name_or_path: LLM-Research/Llama-3.2-1B-Instruct # Base LLM
+processor_name_or_path: llava-hf/llava-1.5-7b-hf
+
+# Projector injection from Stage 2 training
+projector_path: /path/to/stage2/checkpoint/mm_projector.bin  # Update with actual path
+
+# Vision Tower Configuration
+vision_tower: /path/to/visual_tower.pt  # Update with actual path
+vision_model_name: gigapath
+vision_mode: wsi
+trust_remote_code: true
+mm_use_im_patch_token: false
+mm_use_im_start_end: false
+mm_projector_type: mlp2x_gelu
+mm_hidden_size: 768  # Match GigaPath output dimension
+mm_vision_select_layer: -2
+mm_vision_select_feature: patch
+mm_patch_merge_type: flat
+image_aspect_ratio: square
+image_seq_length: 0 # This is now a model argument
+
+# WSI specific configuration
+patches_per_wsi: 2048  # Still needed for data loading
+
+### Training Method - LoRA Fine-tuning
+stage: sft
+do_train: true
+finetuning_type: lora
+
+lora_target:
+  - q_proj
+  - gate_proj
+  - down_proj
+  - o_proj
+  - k_proj
+  - v_proj
+  - up_proj
+  - linear_1
+  - linear_2
+  # - text_query_projection # Not used in random_sample mode
+lora_rank: 32     # Increase rank for better VQA performance
+lora_alpha: 64   # alpha = 2 * rank
+lora_dropout: 0.05
+loraplus_lr_ratio: 10.0
+create_new_adapter: true
+use_unsloth: false
+
+### Freeze Settings - Stage3 Specific
+freeze_vision_tower: true        # Continue freezing visual encoder
+freeze_multi_modal_projector: false  # Optionally fine-tune projector
+freeze_language_model: false     # Fine-tune LLM through LoRA
+
+### Dataset Configuration - Use VQA Dataset
+dataset: pathtext_wsivqa_stage3_train
+eval_dataset: pathtext_wsivqa_stage3_val
+dataset_dir: /path/to/dataset  # Update with actual path
+template: custom_vqa_llama3
+cutoff_len: 2048
+overwrite_cache: true
+preprocessing_num_workers: 4
+dataloader_num_workers: 4
+use_prefix_lm_mask: false # Stage 3 is standard causal language modeling
+vision_feature_select_mode: random_sample
+projector_dropout: 0.2
+gamma_min: 1.8
+gamma_max: 1.9
+
+do_sanity_check: true
+
+### Output Configuration
+output_dir: saves/custom_llava/stage3_vqa_training
+logging_steps: 10
+save_steps: 100
+plot_loss: true
+overwrite_output_dir: true
+save_only_model: false
+report_to: none
+run_name: stage3_vqa_training
+
+### Training Parameters - VQA Fine-tuning
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8  # Maintain effective batch size
+learning_rate: 2.0e-5            
+num_train_epochs: 10.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+ddp_timeout: 180000000
+max_grad_norm: 1.0
+
+### Evaluation Configuration
+per_device_eval_batch_size: 1
+eval_strategy: steps
+eval_steps: 30
+save_strategy: steps
+save_steps: 30
+save_total_limit: 3
+load_best_model_at_end: true
+metric_for_best_model: eval_loss
+
+### Optimization Settings
+optim: adamw_torch
+adam_beta1: 0.9
+adam_beta2: 0.999
+weight_decay: 0.05
+
+### Distributed Training
+dataloader_pin_memory: true
+dataloader_drop_last: true
+gradient_checkpointing: true
+
+### Random Seed
+seed: 42

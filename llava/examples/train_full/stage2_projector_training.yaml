@@ -1,0 +1,99 @@
+### Stage 2: Projector Training Configuration
+### Sanitized version for public repository - removed hardcoded paths and Chinese comments
+
+### Model Configuration
+model_name_or_path: custom_llava  # Use custom_llava model type
+llm_name_or_path: LLM-Research/Llama-3.2-1B-Instruct  # Base LLM
+processor_name_or_path: llava-hf/llava-1.5-7b-hf
+
+# Vision Tower Configuration
+vision_tower: /path/to/visual_tower.pt  # Update with actual path
+vision_model_name: gigapath  # Vision model architecture
+vision_mode: wsi  # WSI mode
+image_max_pixels: 262144
+trust_remote_code: true
+mm_use_im_patch_token: false
+mm_use_im_start_end: false
+mm_projector_type: mlp2x_gelu
+mm_hidden_size: 768  # Match GigaPath output dimension
+mm_vision_select_layer: -2
+mm_vision_select_feature: patch
+mm_patch_merge_type: flat
+image_aspect_ratio: square
+image_seq_length: 1536
+
+train_from_scratch: false
+ddp_find_unused_parameters: false
+disable_gradient_checkpointing: false  # Enable gradient checkpointing for memory efficiency
+
+### Training Method
+stage: sft  
+do_train: true
+finetuning_type: full  
+
+### Dataset Configuration
+dataset: pathtext_stage2_train  # Reference to dataset_info.json
+eval_dataset: pathtext_stage2_val  # Reference to dataset_info.json
+dataset_dir: /path/to/dataset  # Update with actual path
+patches_per_wsi: 2048  # Reduce patch count for memory efficiency
+template: custom_vqa_llama3
+cutoff_len: 2048
+overwrite_cache: true
+preprocessing_num_workers: 8  # Increase preprocessing processes
+dataloader_num_workers: 4  # Increase data loading processes
+use_prefix_lm_mask: false
+vision_feature_select_mode: random_sample
+projector_dropout: 0.2
+gamma_min: 1.2
+gamma_max: 1.8
+
+### Output Configuration
+output_dir: saves/custom_llava/stage2_projector_training
+logging_steps: 10  # Log every 10 steps
+save_steps: 100  # Save every 100 steps
+plot_loss: true
+overwrite_output_dir: true
+save_only_model: false
+report_to: none  # Enable wandb logging
+run_name: stage2_projector_training
+
+### Training Parameters
+per_device_train_batch_size: 1  # Reduce batch size to avoid OOM
+gradient_accumulation_steps: 16   # Increase gradient accumulation to maintain effective batch size
+learning_rate: 1.0e-3
+num_train_epochs: 10  
+lr_scheduler_type: cosine
+warmup_ratio: 0.0
+bf16: true # Use bf16 mixed precision
+ddp_timeout: 180000000
+resume_from_checkpoint: null
+
+### Evaluation Configuration
+per_device_eval_batch_size: 4
+eval_strategy: steps  # Evaluate every N steps
+eval_steps: 100  # Evaluate every 100 steps, consistent with save_steps
+save_strategy: steps
+save_steps: 100  # Save every 100 steps
+save_total_limit: 3
+load_best_model_at_end: true  # Load best model at training end
+metric_for_best_model: eval_loss  # Use validation loss as best model metric
+
+### Freeze Settings (Stage 2: Only train projector)
+freeze_vision_tower: true        # Freeze visual encoder
+freeze_language_model: true      # Freeze LLM
+freeze_multi_modal_projector: false  # Don't freeze projector, allow training
+
+### Optimization Settings
+optim: adamw_torch
+adam_beta1: 0.9
+adam_beta2: 0.999
+weight_decay: 0.03
+max_grad_norm: 1.0
+
+### Distributed Training Optimization
+dataloader_pin_memory: true
+dataloader_drop_last: true
+gradient_checkpointing: true
+
+### Random Seed
+seed: 42

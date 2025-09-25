@@ -1,0 +1,29 @@
+{
+    "embed_dim": 768,
+    "vision_cfg": {
+        "vision_type": "slide",
+        "model_name": "gigapath",
+        "slide_encoder_cfg": {
+            "num_heads": 8,
+            "window_size": 16,
+            "drop_path_rate": 0.1,
+            "slide_pos": true
+
+        },
+        "patch_encoder_cfg": null
+    },
+    "text_cfg": {
+        "context_length": 77,
+        "vocab_size": 50257,
+        "width": 768,
+        "hf_model_name": "gpt2",
+        "hf_model_pretrained": true,
+        "hf_proj_type": "mlp",
+        "hf_pooler_type": "mean_pooler",
+        "output_tokens": true
+    },
+    "init_logit_scale": 2.6593,
+    "init_logit_bias": null,
+    "quick_gelu": true,
+    "is_wsi_model": true
+}
